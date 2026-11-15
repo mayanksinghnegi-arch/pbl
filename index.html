@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FoodBridge — Canteen Surplus to NGOs</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" href="#overview" data-nav="overview">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 32 32" width="28" height="28"><circle cx="16" cy="16" r="15" fill="#1f6f43"/><path d="M9 18c0-5 4-9 10-9 1 6-3 11-9 11" fill="#c9f2a7"/><path d="M10 22c2-4 5-7 9-9" stroke="#1f6f43" stroke-width="1.6" fill="none" stroke-linecap="round"/><path d="M8 23h16" stroke="#f2b84b" stroke-width="2.2" stroke-linecap="round"/></svg>
+      </span>
+      <span>
+        <strong>FoodBridge</strong>
+        <small>Canteen surplus → NGOs</small>
+      </span>
+    </a>
+    <nav class="tabs" aria-label="Main">
+      <button data-nav="overview" class="tab active">Overview</button>
+      <button data-nav="canteen" class="tab">Canteen Staff</button>
+      <button data-nav="ngo" class="tab">NGO Portal</button>
+      <button data-nav="admin" class="tab">Admin</button>
+    </nav>
+    <div class="status" id="serverStatus"><span class="dot"></span><span class="status-text">Connecting…</span></div>
+  </div>
+</header>
+
+<main>
+
+  <!-- ================= OVERVIEW ================= -->
+  <section class="view active" id="view-overview">
+    <div class="hero">
+      <div>
+        <p class="eyebrow">Food Waste Prediction &amp; Redistribution System</p>
+        <h1>Leftover food from the canteen, in an NGO's hands before it spoils.</h1>
+        <p class="lead">Canteen staff record surplus raw and prepared food. The engine ranks it by how soon it spoils, NGOs request it, and every hand-over is logged. A moving-average model forecasts tomorrow's surplus so the kitchen can cook less.</p>
+        <div class="hero-actions">
+          <button class="btn primary" data-nav="canteen">Record surplus food</button>
+          <button class="btn ghost" data-nav="ngo">Browse as an NGO</button>
+        </div>
+      </div>
+      <div class="hero-forecast card">
+        <div class="card-head"><h3>Tomorrow's predicted surplus</h3><span class="tag">7-day moving average</span></div>
+        <div class="forecast-pair">
+          <div><span class="label">Raw food</span><strong id="ovPredRaw">–</strong></div>
+          <div><span class="label">Prepared food</span><strong id="ovPredPrep">–</strong></div>
+        </div>
+        <p class="muted small" id="ovPredNote"></p>
+      </div>
+    </div>
+
+    <div class="kpis" id="ovKpis"></div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-head">
+          <h3>Claim these first</h3>
+          <span class="tag" title="Top of the urgency min-heap">Min-Heap top 3</span>
+        </div>
+        <div id="ovUrgent" class="urgent-list"></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h3>How it flows</h3><span class="tag">DSA + OOP engine</span></div>
+        <ol class="flow">
+          <li><b>Canteen records surplus</b><span>RawFood / PreparedFood object → Linked List + Min-Heap</span></li>
+          <li><b>NGOs browse the listing</b><span>Merge / Quick Sort, Binary Search for price filter</span></li>
+          <li><b>NGO sends a request</b><span>Pushed into the FIFO Order Queue</span></li>
+          <li><b>Matching engine decides</b><span>Hash Table NGO lookup, stock + expiry + capacity rules</span></li>
+          <li><b>Hand-over is logged</b><span>Transaction Stack, most recent first</span></li>
+          <li><b>Forecast updates</b><span>Dynamic Array history → moving average</span></li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= CANTEEN ================= -->
+  <section class="view" id="view-canteen">
+    <div class="page-head">
+      <div>
+        <h2>Canteen Staff</h2>
+        <p class="muted" id="canteenName">Record leftover food, release NGO requests and track pick-ups.</p>
+      </div>
+    </div>
+
+    <div class="grid-canteen">
+      <form class="card" id="foodForm" autocomplete="off">
+        <div class="card-head"><h3>Record surplus food</h3></div>
+        <div class="segmented" role="radiogroup" aria-label="Food type">
+          <label><input type="radio" name="type" value="RAW" checked><span>Raw food</span></label>
+          <label><input type="radio" name="type" value="PREPARED"><span>Prepared food</span></label>
+        </div>
+        <p class="hint" id="typeHint">Unused ingredient stock — vegetables, grains, dairy.</p>
+
+        <label class="field"><span>Item name</span><input name="name" required placeholder="e.g. Tomatoes" maxlength="60"></label>
+        <div class="row-3">
+          <label class="field"><span>Quantity</span><input name="quantity" type="number" min="0.1" step="0.1" required placeholder="8"></label>
+          <label class="field"><span>Unit</span>
+            <select name="unit"><option>kg</option><option>litre</option></select>
+          </label>
+          <label class="field"><span>Price / unit (₹)</span><input name="price" type="number" min="0" step="0.5" required placeholder="20"></label>
+        </div>
+
+        <div class="raw-only row-2">
+          <label class="field"><span>Storage</span>
+            <select name="storageType"><option>Room</option><option>Refrigerated</option><option>Frozen</option></select>
+          </label>
+          <label class="field"><span>Shelf life left (days)</span><input name="shelfLifeDays" type="number" min="1" step="1" value="2"></label>
+        </div>
+        <div class="prep-only row-2" hidden>
+          <label class="field"><span>Cooked how long ago (hours)</span><input name="cookedHoursAgo" type="number" min="0" step="0.5" value="1"></label>
+          <label class="field"><span>Safe to eat within (hours of cooking)</span><input name="consumeWithinHours" type="number" min="0.5" step="0.5" value="6"></label>
+        </div>
+
+        <div class="formula" id="formula">urgency = shelf life − time since added</div>
+        <button class="btn primary block" type="submit">Add to inventory</button>
+      </form>
+
+      <div class="card">
+        <div class="card-head">
+          <h3>Current inventory</h3>
+          <span class="tag" id="invMeta">Linked List</span>
+        </div>
+        <div class="table-wrap">
+          <table class="table" id="invTable">
+            <thead><tr><th>ID</th><th>Item</th><th>Qty</th><th>Price</th><th>Time left</th><th></th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-head">
+          <h3>NGO requests waiting</h3>
+          <span class="tag">FIFO Queue</span>
+        </div>
+        <p class="muted small">Requests are served strictly in arrival order. If two NGOs ask for the same item, the first one gets it.</p>
+        <ol class="queue" id="queueList"></ol>
+        <button class="btn primary block" id="processQueueBtn">Process queue</button>
+        <div id="processResults" class="results"></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h3>Awaiting pick-up</h3><span class="tag">Confirmed orders</span></div>
+        <div id="pickupList" class="stack-list"></div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-head"><h3>Surplus forecast</h3><span class="tag">Moving average, N = 7</span></div>
+        <div class="chart-block">
+          <div class="chart-title"><b>Raw food</b><span id="fcRawLabel"></span></div>
+          <div id="chartRaw" class="chart"></div>
+        </div>
+        <div class="chart-block">
+          <div class="chart-title"><b>Prepared food</b><span id="fcPrepLabel"></span></div>
+          <div id="chartPrep" class="chart"></div>
+        </div>
+        <div class="legend"><span><i class="sw sw-actual"></i>Recorded leftover (kg)</span><span><i class="sw sw-today"></i>Today so far</span><span><i class="sw sw-pred"></i>Predicted tomorrow</span></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h3>Nearest NGOs for pick-up</h3><span class="tag">Graph + Dijkstra</span></div>
+        <div id="nearestList" class="stack-list"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= NGO ================= -->
+  <section class="view" id="view-ngo">
+    <div class="page-head">
+      <div>
+        <h2>NGO Portal</h2>
+        <p class="muted">Pick available food, send a request, and confirm when it reaches people.</p>
+      </div>
+      <div class="ngo-picker">
+        <label class="field inline"><span>Acting as</span><select id="ngoSelect"></select></label>
+        <button class="btn ghost" id="openRegister">Register new NGO</button>
+      </div>
+    </div>
+
+    <div class="ngo-profile card" id="ngoProfile"></div>
+
+    <div class="card">
+      <div class="toolbar">
+        <div class="segmented small" id="typeFilter">
+          <label><input type="radio" name="tf" value="" checked><span>All</span></label>
+          <label><input type="radio" name="tf" value="RAW"><span>Raw</span></label>
+          <label><input type="radio" name="tf" value="PREPARED"><span>Prepared</span></label>
+        </div>
+        <label class="field inline"><span>Sort by</span>
+          <select id="sortSelect">
+            <option value="urgency">Spoils soonest</option>
+            <option value="price">Price: low to high</option>
+            <option value="name">Name A–Z</option>
+          </select>
+        </label>
+        <label class="field inline"><span>Max price ₹</span><input id="maxPrice" type="number" min="0" step="1" placeholder="any"></label>
+      </div>
+      <p class="meta" id="foodsMeta"></p>
+      <div class="food-grid" id="foodGrid"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h3>My requests</h3><span class="tag">viewHistory()</span></div>
+      <div class="table-wrap">
+        <table class="table" id="myOrders">
+          <thead><tr><th>Order</th><th>Item</th><th>Qty</th><th>Amount</th><th>Placed</th><th>Status</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= ADMIN ================= -->
+  <section class="view" id="view-admin">
+    <div class="page-head">
+      <div>
+        <h2>Admin</h2>
+        <p class="muted">Every transaction, forecast accuracy and the live state of the engine.</p>
+      </div>
+    </div>
+
+    <div class="kpis" id="adKpis"></div>
+
+    <div class="card">
+      <div class="card-head">
+        <h3>Transaction history</h3>
+        <span class="tag" id="stackMeta">Stack · newest first</span>
+      </div>
+      <div class="segmented small" id="txFilter">
+        <label><input type="radio" name="sf" value="" checked><span>All</span></label>
+        <label><input type="radio" name="sf" value="CONFIRMED"><span>Confirmed</span></label>
+        <label><input type="radio" name="sf" value="PICKED_UP"><span>Picked up</span></label>
+        <label><input type="radio" name="sf" value="DISTRIBUTED"><span>Distributed</span></label>
+        <label><input type="radio" name="sf" value="REJECTED"><span>Rejected</span></label>
+      </div>
+      <div class="table-wrap">
+        <table class="table" id="txTable">
+          <thead><tr><th>Order</th><th>NGO</th><th>Item</th><th>Qty</th><th>Amount</th><th>Time</th><th>Status</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-head">
+          <h3>Prediction accuracy (back-test)</h3>
+          <label class="field inline"><span>Window N</span>
+            <select id="windowSelect"><option>3</option><option>5</option><option selected>7</option><option>10</option></select>
+          </label>
+        </div>
+        <p class="muted small">For each past day, the line shows what the moving average of the previous N days would have predicted, against what was actually left over.</p>
+        <div class="chart-block">
+          <div class="chart-title"><b>Raw food</b><span id="accRaw"></span></div>
+          <div id="btRaw" class="chart"></div>
+        </div>
+        <div class="chart-block">
+          <div class="chart-title"><b>Prepared food</b><span id="accPrep"></span></div>
+          <div id="btPrep" class="chart"></div>
+        </div>
+        <div class="legend"><span><i class="sw sw-actual"></i>Actual</span><span><i class="sw sw-pred line"></i>Predicted</span></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h3>Engine state</h3><span class="tag">live structure sizes</span></div>
+        <div class="ds-grid" id="dsGrid"></div>
+        <div class="card-head mt"><h3>Engine activity</h3><button class="btn tiny ghost" id="refreshLog">Refresh</button></div>
+        <ul class="log" id="engineLog"></ul>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- Order dialog -->
+<dialog id="orderDialog">
+  <form method="dialog" id="orderForm">
+    <h3 id="odTitle">Request food</h3>
+    <p class="muted small" id="odSub"></p>
+    <label class="field"><span>Quantity (<span id="odUnit">kg</span>)</span>
+      <input type="number" id="odQty" min="0.1" step="0.1" required>
+    </label>
+    <input type="range" id="odRange" min="0.1" step="0.1">
+    <div class="od-total"><span>Amount payable</span><strong id="odAmount">₹0</strong></div>
+    <p class="hint" id="odCap"></p>
+    <div class="dialog-actions">
+      <button class="btn ghost" value="cancel" formnovalidate>Cancel</button>
+      <button class="btn primary" id="odSubmit" value="ok">Send request</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Register NGO dialog -->
+<dialog id="ngoDialog">
+  <form method="dialog" id="ngoForm" autocomplete="off">
+    <h3>Register a new NGO</h3>
+    <label class="field"><span>NGO name</span><input name="name" required maxlength="60"></label>
+    <div class="row-2">
+      <label class="field"><span>Contact number</span><input name="contactNumber" required inputmode="numeric" placeholder="10 digits"></label>
+      <label class="field"><span>Daily capacity (kg)</span><input name="capacityPerDay" type="number" min="1" step="1" required value="20"></label>
+    </div>
+    <label class="field"><span>Address</span><input name="address" required maxlength="80"></label>
+    <div class="row-2">
+      <label class="field"><span>Nearest landmark</span><select name="landmark" id="landmarkSelect"><option value="">— not mapped —</option></select></label>
+      <label class="field"><span>Distance from it (km)</span><input name="distanceKm" type="number" min="0.1" step="0.1" placeholder="1.5"></label>
+    </div>
+    <p class="hint">The landmark links the NGO into the road graph so Dijkstra can find its distance from the canteen.</p>
+    <div class="dialog-actions">
+      <button class="btn ghost" value="cancel" formnovalidate>Cancel</button>
+      <button class="btn primary" value="ok">Register</button>
+    </div>
+  </form>
+</dialog>
+
+<div class="toasts" id="toasts" aria-live="polite"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
